@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".Picker">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/viewFinder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <ImageView
+            android:id="@+id/image_view_flash"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_baseline_flash_off_36"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="@+id/image_view_click"
+            app:layout_constraintEnd_toStartOf="@+id/image_view_click"
+            app:layout_constraintTop_toTopOf="@+id/image_view_click" />
+
+        <ImageButton
+            android:id="@+id/image_view_click"
+            android:layout_width="@dimen/round_button_large"
+            android:layout_height="@dimen/round_button_large"
+            android:layout_marginBottom="36dp"
+            android:background="@drawable/shape_ring"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <ImageView
+            android:id="@+id/image_view_change_camera"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_baseline_flip_camera_36"
+            app:layout_constraintStart_toEndOf="@+id/image_view_click"
+            app:layout_constraintBottom_toBottomOf="@+id/image_view_click"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/image_view_click" />
+
+        <TextView
+            android:id="@+id/text_view_message_bottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/picker_bottom_message_with_video"
+            android:textColor="@color/colorWhite"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="@+id/image_view_click"
+            app:layout_constraintStart_toStartOf="@+id/image_view_click"
+            app:layout_constraintTop_toBottomOf="@+id/image_view_click" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

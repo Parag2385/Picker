@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Picker</string>
+    <string name="picker_bottom_message_with_video">Hold for video, tap for photo</string>
+</resources>

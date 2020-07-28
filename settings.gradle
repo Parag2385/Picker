@@ -1,0 +1,3 @@
+include ':Picker'
+include ':app'
+rootProject.name = "PickerSample"
