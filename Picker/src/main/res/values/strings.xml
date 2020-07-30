@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Picker</string>
     <string name="picker_bottom_message_with_video">Hold for video, tap for photo</string>
+
+    <string name="recent">Recent</string>
+    <string name="last_month">Last Month</string>
+    <string name="last_week">Last Week</string>
 </resources>

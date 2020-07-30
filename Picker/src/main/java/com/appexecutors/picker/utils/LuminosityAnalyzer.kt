@@ -5,9 +5,6 @@ import androidx.camera.core.ImageProxy
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.average
-import kotlin.collections.forEach
-import kotlin.collections.map
 
 /** Helper type alias used for analysis use case callbacks */
 typealias LumaListener = (luma: Double) -> Unit
@@ -23,7 +20,7 @@ class LuminosityAnalyzer(listener: LumaListener? = null) : ImageAnalysis.Analyze
     private val frameTimestamps = ArrayDeque<Long>(5)
     private val listeners = ArrayList<LumaListener>().apply { listener?.let { add(it) } }
     private var lastAnalyzedTimestamp = 0L
-    var framesPerSecond: Double = -1.0
+    private var framesPerSecond: Double = -1.0
     private set
 
     /**

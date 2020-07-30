@@ -3,33 +3,57 @@ package com.appexecutors.picker
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ContentUris
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.ScaleGestureDetector
+import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.webkit.MimeTypeMap
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.net.toFile
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup
 import com.appexecutors.picker.databinding.ActivityPickerBinding
+import com.appexecutors.picker.gallery.BottomSheetMediaRecyclerAdapter
+import com.appexecutors.picker.gallery.BottomSheetMediaRecyclerAdapter.Companion.HEADER
+import com.appexecutors.picker.gallery.BottomSheetMediaRecyclerAdapter.Companion.SPAN_COUNT
+import com.appexecutors.picker.gallery.InstantMediaRecyclerAdapter
+import com.appexecutors.picker.gallery.MediaModel
 import com.appexecutors.picker.interfaces.PermissionCallback
+import com.appexecutors.picker.utils.GeneralUtils.getStringDate
+import com.appexecutors.picker.utils.GeneralUtils.hideStatusBar
+import com.appexecutors.picker.utils.GeneralUtils.manipulateBottomSheetVisibility
+import com.appexecutors.picker.utils.GeneralUtils.showStatusBar
+import com.appexecutors.picker.utils.HeaderItemDecoration
 import com.appexecutors.picker.utils.LuminosityAnalyzer
+import com.appexecutors.picker.utils.MediaConstants.IMAGE_VIDEO_URI
+import com.appexecutors.picker.utils.MediaConstants.getImageVideoCursor
 import com.appexecutors.picker.utils.PermissionUtils
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import kotlinx.android.synthetic.main.activity_picker.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -53,6 +77,7 @@ class Picker : AppCompatActivity() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var flashMode: Int = ImageCapture.FLASH_MODE_OFF
     private var lastScaleFactor = 0f
+    private var statusBarSize = 0
 
     private lateinit var outputDirectory: File
     private lateinit var cameraExecutor: ExecutorService
@@ -73,6 +98,14 @@ class Picker : AppCompatActivity() {
         outputDirectory = getOutputDirectory()
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+        window.decorView.setOnApplyWindowInsetsListener { view, insets ->
+            statusBarSize = insets.systemWindowInsetTop
+            Log.e(TAG, "onCreate: $statusBarSize" )
+            insets
+        }
+        showStatusBar(this)
+        getMedia()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -326,6 +359,99 @@ class Picker : AppCompatActivity() {
                 }, ANIMATION_SLOW_MILLIS)
             }
         }
+    }
+
+    private val galleryImageList = ArrayList<MediaModel>()
+
+    private fun getMedia() {
+
+        CoroutineScope(Dispatchers.Main).launch{
+            val cursor: Cursor? = withContext(Dispatchers.IO){
+                getImageVideoCursor(this@Picker, true)
+            }
+
+            if (cursor != null){
+
+                Log.e(TAG, "getMedia: ${cursor.count}" )
+
+                val index = cursor.getColumnIndex(MediaStore.Files.FileColumns._ID)
+                val dateIndex = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATE_ADDED)
+
+                var headerDate = ""
+
+                while (cursor.moveToNext()){
+                    val id = cursor.getLong(index)
+                    val path = ContentUris.withAppendedId(IMAGE_VIDEO_URI, id)
+                    val longDate = cursor.getLong(dateIndex)
+                    val mediaDate = getStringDate(this@Picker, longDate)
+
+                    if (!headerDate.equals(mediaDate, true)) {
+                        headerDate = mediaDate
+                        galleryImageList.add(MediaModel(null, headerDate))
+                    }
+
+                    galleryImageList.add(MediaModel(path, ""))
+                }
+
+                val mediaAdapter = InstantMediaRecyclerAdapter(galleryImageList, this@Picker)
+                mBinding.recyclerViewInstantMedia.adapter = mediaAdapter
+
+                handleBottomSheet()
+            }
+
+        }
+    }
+
+    private var bottomSheetBehavior: BottomSheetBehavior<ConstraintLayout>? = null
+
+    private fun handleBottomSheet(){
+
+        val mediaAdapter = BottomSheetMediaRecyclerAdapter(galleryImageList, this@Picker)
+
+        val layoutManager = GridLayoutManager(this, SPAN_COUNT)
+        mBinding.recyclerViewBottomSheetMedia.layoutManager = layoutManager
+
+        layoutManager.spanSizeLookup = object : SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return if (mediaAdapter.getItemViewType(position) == HEADER) {
+                    SPAN_COUNT
+                } else 1
+            }
+        }
+
+        mBinding.recyclerViewBottomSheetMedia.adapter = mediaAdapter
+        mBinding.recyclerViewBottomSheetMedia.addItemDecoration(HeaderItemDecoration(mediaAdapter, this))
+
+        bottomSheetBehavior = BottomSheetBehavior.from(mBinding.bottomSheet)
+
+        bottomSheetBehavior?.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback(){
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+
+//                if (slideOffset == 1f){
+//                    mBinding.recyclerViewInstantMedia.visibility = GONE
+//                    mBinding.recyclerViewBottomSheetMedia.visibility = VISIBLE
+//                    mBinding.constraintBottomSheetTop.visibility = VISIBLE
+//                }else if (slideOffset == 0f){
+//                    mBinding.recyclerViewInstantMedia.visibility = VISIBLE
+//                    mBinding.recyclerViewBottomSheetMedia.visibility = INVISIBLE
+//                    mBinding.constraintBottomSheetTop.visibility = INVISIBLE
+//                }
+
+                manipulateBottomSheetVisibility(this@Picker, slideOffset, mBinding.recyclerViewInstantMedia,
+                    mBinding.recyclerViewBottomSheetMedia, mBinding.constraintBottomSheetTop)
+
+            }
+
+            override fun onStateChanged(bottomSheet: View, newState: Int) {/*Not Required*/}
+
+        })
+
+
+        if (statusBarSize > 0) {
+            val params = mBinding.constraintBottomSheetTop.layoutParams as ConstraintLayout.LayoutParams
+            params.setMargins(0, statusBarSize, 0, 0)
+        }
+        hideStatusBar(this)
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
