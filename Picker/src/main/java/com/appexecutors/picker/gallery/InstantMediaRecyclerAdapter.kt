@@ -5,9 +5,12 @@ import android.view.LayoutInflater
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
-import android.widget.LinearLayout
+import android.widget.FrameLayout
+import android.widget.Toast
+import android.widget.Toast.LENGTH_SHORT
 import androidx.recyclerview.widget.RecyclerView
 import com.appexecutors.picker.databinding.RecyclerItemMediaBinding
+import com.appexecutors.picker.interfaces.MediaClickInterface
 import com.appexecutors.picker.utils.GeneralUtils.convertDpToPixel
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
@@ -16,8 +19,9 @@ import com.bumptech.glide.load.resource.bitmap.FitCenter
 import com.bumptech.glide.request.RequestOptions
 
 
-class InstantMediaRecyclerAdapter(val mMediaList: ArrayList<MediaModel>, mContext: Context): RecyclerView.Adapter<InstantMediaRecyclerAdapter.MediaViewHolder>() {
+class InstantMediaRecyclerAdapter(val mMediaList: ArrayList<MediaModel>, val mInterface: MediaClickInterface, private val mContext: Context): RecyclerView.Adapter<InstantMediaRecyclerAdapter.MediaViewHolder>() {
 
+    var maxCount = 0
     private val glide: RequestManager
     private val options: RequestOptions
     private var size = 0f
@@ -45,16 +49,18 @@ class InstantMediaRecyclerAdapter(val mMediaList: ArrayList<MediaModel>, mContex
         holder.bind(holder.adapterPosition)
     }
 
+    var imageCount = 0
+
     inner class MediaViewHolder(private val mBinding: RecyclerItemMediaBinding): RecyclerView.ViewHolder(mBinding.root) {
 
         fun bind(position: Int){
             val media = mMediaList[position]
             if (media.mMediaUri == null){
                 itemView.visibility = GONE
-                itemView.layoutParams = LinearLayout.LayoutParams(0,0)
+                itemView.layoutParams = FrameLayout.LayoutParams(0,0)
             }else {
                 itemView.visibility = VISIBLE
-                val layoutParams = LinearLayout.LayoutParams(size.toInt(), size.toInt())
+                val layoutParams = FrameLayout.LayoutParams(size.toInt(), size.toInt())
 
                 if (position == 0) {
                     layoutParams.setMargins(-(margin / 2), margin, margin, margin)
@@ -67,6 +73,34 @@ class InstantMediaRecyclerAdapter(val mMediaList: ArrayList<MediaModel>, mContex
                 glide.load(media.mMediaUri)
                     .apply(options)
                     .into(mBinding.imageView)
+
+                if (media.isSelected) mBinding.imageViewSelection.visibility = VISIBLE
+                else mBinding.imageViewSelection.visibility = GONE
+
+                itemView.setOnClickListener {
+                    if (imageCount == 0) {
+                        media.isSelected = !media.isSelected
+                        mInterface.onMediaClick(media)
+                    }
+                    else if (imageCount < maxCount || media.isSelected){
+                        media.isSelected = !media.isSelected
+                        notifyItemChanged(position)
+                        if (media.isSelected) imageCount++ else imageCount--
+                        mInterface.onMediaLongClick(media, this@InstantMediaRecyclerAdapter::class.java.simpleName)
+                    }else{
+                        Toast.makeText(mContext, "Cannot add more than $maxCount items", LENGTH_SHORT).show()
+                    }
+                }
+
+                itemView.setOnLongClickListener {
+                    if (imageCount == 0) {
+                        media.isSelected = true
+                        notifyItemChanged(position)
+                        imageCount++
+                        mInterface.onMediaLongClick(media, this@InstantMediaRecyclerAdapter::class.java.simpleName)
+                    }
+                    true
+                }
             }
 
 

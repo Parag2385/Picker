@@ -8,15 +8,23 @@ import androidx.appcompat.app.AppCompatActivity
 import com.appexecutors.picker.Picker
 import com.appexecutors.picker.Picker.Companion.PICKED_MEDIA_LIST
 import com.appexecutors.picker.Picker.Companion.REQUEST_CODE_PICKER
+import com.appexecutors.picker.utils.PickerOptions
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var mPickerOptions: PickerOptions
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         fab.setOnClickListener {
-            Picker.startPicker(this)
+            Picker.startPicker(this, mPickerOptions)
+        }
+
+        mPickerOptions = PickerOptions.init().apply {
+            maxCount = 5
         }
     }
 

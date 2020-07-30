@@ -43,7 +43,7 @@ object MediaConstants {
             .query(
                 IMAGE_VIDEO_URI,
                 IMAGE_VIDEO_PROJECTION,
-                IMAGE_VIDEO_SELECTION,
+                if (excludeVideo)IMAGE_SELECTION else IMAGE_VIDEO_SELECTION,
                 null,
                 IMAGE_VIDEO_ORDER_BY
             )

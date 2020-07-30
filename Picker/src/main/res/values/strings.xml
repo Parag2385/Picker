@@ -5,4 +5,8 @@
     <string name="recent">Recent</string>
     <string name="last_month">Last Month</string>
     <string name="last_week">Last Week</string>
+
+    <string name="tap_to_select">Tap to Select</string>
+    <string name="images_selected">%s Selected</string>
+    <string name="str_ok">OK</string>
 </resources>

@@ -18,14 +18,14 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.view.ScaleGestureDetector
 import android.view.View
-import android.view.View.GONE
-import android.view.View.VISIBLE
+import android.view.View.*
 import android.webkit.MimeTypeMap
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toFile
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -38,6 +38,7 @@ import com.appexecutors.picker.gallery.BottomSheetMediaRecyclerAdapter.Companion
 import com.appexecutors.picker.gallery.BottomSheetMediaRecyclerAdapter.Companion.SPAN_COUNT
 import com.appexecutors.picker.gallery.InstantMediaRecyclerAdapter
 import com.appexecutors.picker.gallery.MediaModel
+import com.appexecutors.picker.interfaces.MediaClickInterface
 import com.appexecutors.picker.interfaces.PermissionCallback
 import com.appexecutors.picker.utils.GeneralUtils.getStringDate
 import com.appexecutors.picker.utils.GeneralUtils.hideStatusBar
@@ -48,6 +49,7 @@ import com.appexecutors.picker.utils.LuminosityAnalyzer
 import com.appexecutors.picker.utils.MediaConstants.IMAGE_VIDEO_URI
 import com.appexecutors.picker.utils.MediaConstants.getImageVideoCursor
 import com.appexecutors.picker.utils.PermissionUtils
+import com.appexecutors.picker.utils.PickerOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import kotlinx.android.synthetic.main.activity_picker.*
 import kotlinx.coroutines.CoroutineScope
@@ -65,6 +67,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sign
 
+@Suppress("DEPRECATION")
 class Picker : AppCompatActivity() {
 
     private lateinit var mBinding: ActivityPickerBinding
@@ -81,10 +84,13 @@ class Picker : AppCompatActivity() {
 
     private lateinit var outputDirectory: File
     private lateinit var cameraExecutor: ExecutorService
+    private lateinit var mPickerOptions: PickerOptions
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mBinding = DataBindingUtil.setContentView(this, R.layout.activity_picker)
+
+        mPickerOptions = intent?.getSerializableExtra(PICKER_OPTIONS) as PickerOptions
 
         mBinding.viewFinder.post {
             if (allPermissionsGranted()) {
@@ -99,9 +105,8 @@ class Picker : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        window.decorView.setOnApplyWindowInsetsListener { view, insets ->
+        window.decorView.setOnApplyWindowInsetsListener { _, insets ->
             statusBarSize = insets.systemWindowInsetTop
-            Log.e(TAG, "onCreate: $statusBarSize" )
             insets
         }
         showStatusBar(this)
@@ -151,6 +156,8 @@ class Picker : AppCompatActivity() {
             scaleGestureDetector.onTouchEvent(event)
             return@setOnTouchListener true
         }
+
+        if (!mPickerOptions.allowFrontCamera) mBinding.imageViewChangeCamera.visibility = GONE
     }
 
     private val zoomListener = object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
@@ -362,12 +369,14 @@ class Picker : AppCompatActivity() {
     }
 
     private val galleryImageList = ArrayList<MediaModel>()
+    private var mInstantMediaAdapter: InstantMediaRecyclerAdapter? = null
+    private var mBottomMediaAdapter: BottomSheetMediaRecyclerAdapter? = null
 
     private fun getMedia() {
 
         CoroutineScope(Dispatchers.Main).launch{
             val cursor: Cursor? = withContext(Dispatchers.IO){
-                getImageVideoCursor(this@Picker, true)
+                getImageVideoCursor(this@Picker, mPickerOptions.excludeVideos)
             }
 
             if (cursor != null){
@@ -393,8 +402,9 @@ class Picker : AppCompatActivity() {
                     galleryImageList.add(MediaModel(path, ""))
                 }
 
-                val mediaAdapter = InstantMediaRecyclerAdapter(galleryImageList, this@Picker)
-                mBinding.recyclerViewInstantMedia.adapter = mediaAdapter
+                mInstantMediaAdapter = InstantMediaRecyclerAdapter(galleryImageList, mMediaClickListener, this@Picker)
+                mInstantMediaAdapter?.maxCount = mPickerOptions.maxCount
+                mBinding.recyclerViewInstantMedia.adapter = mInstantMediaAdapter
 
                 handleBottomSheet()
             }
@@ -402,43 +412,140 @@ class Picker : AppCompatActivity() {
         }
     }
 
+    private val mMediaClickListener = object: MediaClickInterface{
+        override fun onMediaClick(media: MediaModel) {
+            pickImages()
+        }
+
+        override fun onMediaLongClick(media: MediaModel, intentFrom: String) {
+
+            if (intentFrom == InstantMediaRecyclerAdapter::class.java.simpleName){
+                if (mInstantMediaAdapter?.imageCount!! > 0){
+                    mBinding.textViewImageCount.text = mInstantMediaAdapter?.imageCount?.toString()
+                    mBinding.textViewTopSelect.text = String.format(getString(R.string.images_selected), mInstantMediaAdapter?.imageCount?.toString())
+                    showTopViews()
+                }else hideTopViews()
+            }
+
+
+            if (intentFrom == BottomSheetMediaRecyclerAdapter::class.java.simpleName){
+                if (mBottomMediaAdapter?.imageCount!! > 0){
+                    mBinding.textViewImageCount.text = mBottomMediaAdapter?.imageCount?.toString()
+                    mBinding.textViewTopSelect.text = String.format(getString(R.string.images_selected), mBottomMediaAdapter?.imageCount?.toString())
+                    showTopViews()
+                }else hideTopViews()
+
+            }
+
+        }
+
+    }
+
+    private fun showTopViews(){
+        mBinding.constraintCheck.visibility = VISIBLE
+        mBinding.textViewOk.visibility = VISIBLE
+
+        mBinding.imageViewCheck.visibility = GONE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            mBinding.constraintBottomSheetTop.setBackgroundColor(resources.getColor(R.color.colorPrimary, null))
+            DrawableCompat.setTint(mBinding.imageViewBack.drawable, resources.getColor(R.color.colorWhite, null))
+        }else{
+            mBinding.constraintBottomSheetTop.setBackgroundColor(resources.getColor(R.color.colorPrimary))
+            DrawableCompat.setTint(mBinding.imageViewBack.drawable, resources.getColor(R.color.colorWhite))
+        }
+    }
+
+    private fun hideTopViews(){
+        mBinding.constraintCheck.visibility = GONE
+        mBinding.textViewOk.visibility = GONE
+        mBinding.imageViewCheck.visibility = VISIBLE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            mBinding.constraintBottomSheetTop.setBackgroundColor(resources.getColor(R.color.colorWhite, null))
+            DrawableCompat.setTint(mBinding.imageViewBack.drawable, resources.getColor(R.color.colorBlack, null))
+        }else{
+            mBinding.constraintBottomSheetTop.setBackgroundColor(resources.getColor(R.color.colorWhite))
+            DrawableCompat.setTint(mBinding.imageViewBack.drawable, resources.getColor(R.color.colorBlack))
+        }
+    }
+
     private var bottomSheetBehavior: BottomSheetBehavior<ConstraintLayout>? = null
 
     private fun handleBottomSheet(){
 
-        val mediaAdapter = BottomSheetMediaRecyclerAdapter(galleryImageList, this@Picker)
+        mBottomMediaAdapter = BottomSheetMediaRecyclerAdapter(galleryImageList, mMediaClickListener, this@Picker)
+        mBottomMediaAdapter?.maxCount = mPickerOptions.maxCount
 
         val layoutManager = GridLayoutManager(this, SPAN_COUNT)
         mBinding.recyclerViewBottomSheetMedia.layoutManager = layoutManager
 
         layoutManager.spanSizeLookup = object : SpanSizeLookup() {
             override fun getSpanSize(position: Int): Int {
-                return if (mediaAdapter.getItemViewType(position) == HEADER) {
+                return if (mBottomMediaAdapter?.getItemViewType(position) == HEADER) {
                     SPAN_COUNT
                 } else 1
             }
         }
 
-        mBinding.recyclerViewBottomSheetMedia.adapter = mediaAdapter
-        mBinding.recyclerViewBottomSheetMedia.addItemDecoration(HeaderItemDecoration(mediaAdapter, this))
+        mBinding.recyclerViewBottomSheetMedia.adapter = mBottomMediaAdapter
+        mBinding.recyclerViewBottomSheetMedia.addItemDecoration(HeaderItemDecoration(mBottomMediaAdapter!!, this))
 
         bottomSheetBehavior = BottomSheetBehavior.from(mBinding.bottomSheet)
 
+        var notifiedUp = false
+        var notifiedDown = false
+
         bottomSheetBehavior?.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback(){
+            var oldOffSet = 0f
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
 
-//                if (slideOffset == 1f){
-//                    mBinding.recyclerViewInstantMedia.visibility = GONE
-//                    mBinding.recyclerViewBottomSheetMedia.visibility = VISIBLE
-//                    mBinding.constraintBottomSheetTop.visibility = VISIBLE
-//                }else if (slideOffset == 0f){
-//                    mBinding.recyclerViewInstantMedia.visibility = VISIBLE
-//                    mBinding.recyclerViewBottomSheetMedia.visibility = INVISIBLE
-//                    mBinding.constraintBottomSheetTop.visibility = INVISIBLE
-//                }
+                val inRangeExpanding = oldOffSet < slideOffset
+                val inRangeCollapsing = oldOffSet > slideOffset
+                oldOffSet = slideOffset
 
-                manipulateBottomSheetVisibility(this@Picker, slideOffset, mBinding.recyclerViewInstantMedia,
-                    mBinding.recyclerViewBottomSheetMedia, mBinding.constraintBottomSheetTop)
+                if (slideOffset == 1f){
+                    notifiedUp = false
+                    notifiedDown = false
+                    mBinding.imageViewArrowUp.visibility = INVISIBLE
+                }else if (slideOffset == 0f){
+                    notifiedUp = false
+                    notifiedDown = false
+                    mBinding.imageViewArrowUp.visibility = VISIBLE
+                }
+
+                if (slideOffset > 0.6f && slideOffset < 0.8f){
+                    if (!notifiedUp && inRangeExpanding) {
+                        Log.e(TAG, "onSlide 1: $slideOffset")
+                        mBottomMediaAdapter?.notifyDataSetChanged()
+                        notifiedUp = true
+
+                        var count = 0
+                        galleryImageList.map { mediaModel ->
+                            if (mediaModel.isSelected) count++
+                        }
+                        mBottomMediaAdapter?.imageCount = count
+                    }
+
+
+
+                }else if (slideOffset > 0.1f && slideOffset < 0.3f){
+                    if (!notifiedDown && inRangeCollapsing) {
+                        Log.e(TAG, "onSlide 2: $slideOffset")
+                        mInstantMediaAdapter?.notifyDataSetChanged()
+                        notifiedDown = true
+
+                        var count = 0
+                        galleryImageList.map { mediaModel ->
+                            if (mediaModel.isSelected) count++
+                        }
+                        mInstantMediaAdapter?.imageCount = count
+                        mBinding.textViewImageCount.text = count.toString()
+                    }
+
+                }
+
+                val imageCount = if (mInstantMediaAdapter?.imageCount!! > 0) mInstantMediaAdapter?.imageCount!! else mBottomMediaAdapter?.imageCount!!
+
+                manipulateBottomSheetVisibility(this@Picker, slideOffset, mBinding, imageCount)
 
             }
 
@@ -446,12 +553,50 @@ class Picker : AppCompatActivity() {
 
         })
 
+        mBinding.imageViewBack.setOnClickListener {
+            bottomSheetBehavior?.setState(BottomSheetBehavior.STATE_COLLAPSED)
+        }
+
+        mBinding.constraintCheck.setOnClickListener { pickImages() }
+        mBinding.textViewOk.setOnClickListener { pickImages() }
+        mBinding.imageViewCheck.setOnClickListener {
+            mBinding.constraintCheck.visibility = VISIBLE
+            mBinding.textViewOk.visibility = VISIBLE
+
+            mBinding.textViewTopSelect.text = resources.getString(R.string.tap_to_select)
+
+            mBottomMediaAdapter?.mTapToSelect = true
+
+            mBinding.imageViewCheck.visibility = GONE
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                mBinding.constraintBottomSheetTop.setBackgroundColor(resources.getColor(R.color.colorPrimary, null))
+                DrawableCompat.setTint(mBinding.imageViewBack.drawable, resources.getColor(R.color.colorWhite, null))
+            }else{
+                mBinding.constraintBottomSheetTop.setBackgroundColor(resources.getColor(R.color.colorPrimary))
+                DrawableCompat.setTint(mBinding.imageViewBack.drawable, resources.getColor(R.color.colorWhite))
+            }
+        }
 
         if (statusBarSize > 0) {
             val params = mBinding.constraintBottomSheetTop.layoutParams as ConstraintLayout.LayoutParams
             params.setMargins(0, statusBarSize, 0, 0)
         }
         hideStatusBar(this)
+    }
+
+    private fun pickImages(){
+        val mPathList = ArrayList<String>()
+
+        galleryImageList.map { mediaModel ->
+            if (mediaModel.isSelected) {
+                mPathList.add(mediaModel.mMediaUri.toString())
+            }
+        }
+
+        val intent = Intent()
+        intent.putExtra(PICKED_MEDIA_LIST, mPathList)
+        setResult(Activity.RESULT_OK, intent)
+        finish()
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
@@ -480,6 +625,7 @@ class Picker : AppCompatActivity() {
         private const val TAG = "Picker"
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         const val REQUEST_CODE_PICKER = 10
+        const val PICKER_OPTIONS = "PICKER_OPTIONS"
         const val PICKED_MEDIA_LIST = "PICKED_MEDIA_LIST"
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
         private const val PHOTO_EXTENSION = ".jpg"
@@ -490,20 +636,22 @@ class Picker : AppCompatActivity() {
         const val ANIMATION_SLOW_MILLIS = 100L
 
         @JvmStatic
-        fun startPicker(fragment: Fragment){
+        fun startPicker(fragment: Fragment, mPickerOptions: PickerOptions){
             PermissionUtils.checkForCameraWritePermissions(fragment, object : PermissionCallback {
                 override fun onPermission(approved: Boolean) {
-                    val mPicEditorIntent = Intent(fragment.activity, Picker::class.java)
-                    fragment.startActivityForResult(mPicEditorIntent, REQUEST_CODE_PICKER)
+                    val mPickerIntent = Intent(fragment.activity, Picker::class.java)
+                    mPickerIntent.putExtra(PICKER_OPTIONS, mPickerOptions)
+                    fragment.startActivityForResult(mPickerIntent, REQUEST_CODE_PICKER)
                 }
             })
         }
 
         @JvmStatic
-        fun startPicker(activity: FragmentActivity){
+        fun startPicker(activity: FragmentActivity, mPickerOptions: PickerOptions){
             PermissionUtils.checkForCameraWritePermissions(activity, object : PermissionCallback{
                 override fun onPermission(approved: Boolean) {
                     val mPicEditorIntent = Intent(activity, Picker::class.java)
+                    mPicEditorIntent.putExtra(PICKER_OPTIONS, mPickerOptions)
                     activity.startActivityForResult(mPicEditorIntent, REQUEST_CODE_PICKER)
                 }
             })

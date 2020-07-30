@@ -14,7 +14,6 @@
         tools:context=".Picker">
 
 
-
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:id="@+id/coordinator_layout"
             android:layout_width="match_parent"
@@ -26,10 +25,10 @@
                 android:layout_height="match_parent" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                app:layout_constraintBottom_toBottomOf="parent"
-                android:layout_gravity="bottom"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                app:layout_constraintBottom_toBottomOf="parent">
 
                 <ImageView
                     android:id="@+id/image_view_flash"
@@ -37,9 +36,9 @@
                     android:layout_height="50dp"
                     android:padding="8dp"
                     android:src="@drawable/ic_baseline_flash_off_36"
-                    app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintBottom_toBottomOf="@+id/image_view_click"
                     app:layout_constraintEnd_toStartOf="@+id/image_view_click"
+                    app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="@+id/image_view_click" />
 
                 <ImageButton
@@ -58,9 +57,9 @@
                     android:layout_height="50dp"
                     android:padding="8dp"
                     android:src="@drawable/ic_baseline_flip_camera_36"
-                    app:layout_constraintStart_toEndOf="@+id/image_view_click"
                     app:layout_constraintBottom_toBottomOf="@+id/image_view_click"
                     app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/image_view_click"
                     app:layout_constraintTop_toTopOf="@+id/image_view_click" />
 
                 <TextView
@@ -79,62 +78,148 @@
 
             <com.google.android.material.appbar.AppBarLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/bottom_sheet"
                 android:layout_width="match_parent"
-                app:behavior_peekHeight="200dp"
-                app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                app:behavior_peekHeight="230dp"
+                app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/constraint_bottom_sheet_top"
-                    app:layout_constraintTop_toTopOf="parent"
                     android:layout_width="match_parent"
-                    android:visibility="invisible"
+                    android:layout_height="?actionBarSize"
                     android:background="@color/colorWhite"
-                    android:layout_height="?actionBarSize">
+                    android:visibility="invisible"
+                    app:layout_constraintTop_toTopOf="parent">
 
                     <ImageView
                         android:id="@+id/image_view_back"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:padding="8dp"
+                        android:background="?attr/selectableItemBackground"
                         android:src="@drawable/ic_baseline_arrow_back_36"
-                        app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"/>
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/text_view_top_select"
+                        app:layout_constraintStart_toEndOf="@+id/image_view_back"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/text_view_ok"
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:layout_width="0dp"
+                        android:textSize="14sp"
+                        android:padding="8dp"
+                        android:layout_marginEnd="16dp"
+                        android:textColor="@color/colorWhite"
+                        android:layout_height="wrap_content"/>
 
                     <ImageView
-                        android:id="@+id/image_view_done"
+                        android:id="@+id/image_view_check"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:padding="8dp"
+                        android:background="?attr/selectableItemBackground"
                         android:src="@drawable/ic_check_box"
                         app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/text_view_ok"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"/>
+                        android:layout_width="wrap_content"
+                        android:textSize="14sp"
+                        android:padding="8dp"
+                        android:layout_marginEnd="16dp"
+                        android:text="@string/str_ok"
+                        android:visibility="gone"
+                        android:background="?attr/selectableItemBackground"
+                        android:textColor="@color/colorWhite"
+                        android:layout_height="wrap_content"/>
 
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recycler_view_bottom_sheet_media"
-                    app:layout_constraintTop_toBottomOf="@+id/constraint_bottom_sheet_top"
                     android:layout_width="match_parent"
-                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                    android:visibility="invisible"
+                    android:layout_height="wrap_content"
                     android:background="@color/colorWhite"
-                    android:layout_height="wrap_content"/>
+                    android:visibility="invisible"
+                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                    app:layout_constraintTop_toBottomOf="@+id/constraint_bottom_sheet_top" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/image_view_arrow_up"
+                    android:layout_width="20dp"
+                    android:layout_height="16dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/ic_baseline_expand_less_36"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <View
+                    android:id="@+id/view_anchor"
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    app:layout_constraintBottom_toTopOf="@+id/recycler_view_instant_media" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recycler_view_instant_media"
-                    android:orientation="horizontal"
-                    app:layout_constraintTop_toTopOf="parent"
                     android:layout_width="match_parent"
+                    android:layout_marginTop="4dp"
+                    android:layout_height="80dp"
+                    android:orientation="horizontal"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    android:layout_height="80dp"/>
+                    app:layout_constraintTop_toBottomOf="@+id/image_view_arrow_up" />
+
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/constraint_check"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="@+id/view_anchor"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/view_anchor">
+
+                    <ImageView
+                        android:id="@+id/image_view_tick"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/background_circular_green"
+                        android:padding="12dp"
+                        android:src="@drawable/ic_baseline_check_36"
+                        android:tint="@color/colorWhite"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/text_view_image_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintEnd_toEndOf="@+id/image_view_tick"
+                        app:layout_constraintBottom_toBottomOf="@+id/image_view_tick"
+                        tools:text="10"
+                        android:layout_margin="4dp"
+                        android:padding="5dp"
+                        android:textColor="@color/colorWhite"
+                        android:textSize="11sp" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -5,34 +5,35 @@ import android.content.Context
 import android.util.DisplayMetrics
 import android.view.View.*
 import android.view.WindowManager
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.recyclerview.widget.RecyclerView
 import com.appexecutors.picker.R
+import com.appexecutors.picker.databinding.ActivityPickerBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
 object GeneralUtils {
 
-    fun manipulateBottomSheetVisibility(activity: Activity, slideOffSet: Float, recyclerViewInstantMedia: RecyclerView, recyclerViewBottomSheetMedia: RecyclerView,
-                                        constraintBottomSheetTop: ConstraintLayout){
+    fun manipulateBottomSheetVisibility(activity: Activity, slideOffSet: Float, mBinding: ActivityPickerBinding, count: Int){
 
-        recyclerViewInstantMedia.alpha = 1 - slideOffSet
-        constraintBottomSheetTop.alpha =     slideOffSet
-        recyclerViewBottomSheetMedia.alpha = slideOffSet
+        mBinding.recyclerViewInstantMedia.alpha = 1 - slideOffSet
+        mBinding.constraintCheck.alpha = 1 - slideOffSet
+        mBinding.constraintBottomSheetTop.alpha =     slideOffSet
+        mBinding.recyclerViewBottomSheetMedia.alpha = slideOffSet
 
-        if ((1 - slideOffSet) == 0f && recyclerViewInstantMedia.visibility == VISIBLE){
-            recyclerViewInstantMedia.visibility = GONE
-        }else if(recyclerViewInstantMedia.visibility == GONE && (1 - slideOffSet) > 0f){
-            recyclerViewInstantMedia.visibility = VISIBLE
+        if ((1 - slideOffSet) == 0f && mBinding.recyclerViewInstantMedia.visibility == VISIBLE){
+            mBinding.recyclerViewInstantMedia.visibility = GONE
+            mBinding.constraintCheck.visibility = GONE
+        }else if(mBinding.recyclerViewInstantMedia.visibility == GONE && (1 - slideOffSet) > 0f){
+            mBinding.recyclerViewInstantMedia.visibility = VISIBLE
+            if (count > 0) mBinding.constraintCheck.visibility = VISIBLE
         }
 
-        if (slideOffSet > 0f && recyclerViewBottomSheetMedia.visibility == INVISIBLE){
-            recyclerViewBottomSheetMedia.visibility = VISIBLE
-            constraintBottomSheetTop.visibility = VISIBLE
+        if (slideOffSet > 0f && mBinding.recyclerViewBottomSheetMedia.visibility == INVISIBLE){
+            mBinding.recyclerViewBottomSheetMedia.visibility = VISIBLE
+            mBinding.constraintBottomSheetTop.visibility = VISIBLE
             showStatusBar(activity)
-        }else if (slideOffSet == 0f && recyclerViewBottomSheetMedia.visibility == VISIBLE){
-            recyclerViewBottomSheetMedia.visibility = INVISIBLE
-            constraintBottomSheetTop.visibility = GONE
+        }else if (slideOffSet == 0f && mBinding.recyclerViewBottomSheetMedia.visibility == VISIBLE){
+            mBinding.recyclerViewBottomSheetMedia.visibility = INVISIBLE
+            mBinding.constraintBottomSheetTop.visibility = GONE
             hideStatusBar(activity)
         }
     }
@@ -89,4 +90,5 @@ object GeneralUtils {
         val metrics = resources.displayMetrics
         return px / (metrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)
     }
+
 }

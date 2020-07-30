@@ -73,7 +73,7 @@ class HeaderItemDecoration(private val mListener: StickyHeaderInterface, private
     }
 
     private fun getChildInContact(
-        parent: RecyclerView,
+        parent: ViewGroup,
         contactPoint: Int
     ): View {
         var childInContact: View = parent

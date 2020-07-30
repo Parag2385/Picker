@@ -5,12 +5,15 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
+import android.widget.FrameLayout
 import android.widget.TextView
+import android.widget.Toast
+import android.widget.Toast.LENGTH_SHORT
 import androidx.recyclerview.widget.RecyclerView
 import com.appexecutors.picker.R
 import com.appexecutors.picker.databinding.RecyclerItemDateHeaderBinding
 import com.appexecutors.picker.databinding.RecyclerItemMediaBinding
+import com.appexecutors.picker.interfaces.MediaClickInterface
 import com.appexecutors.picker.utils.GeneralUtils.getScreenWidth
 import com.appexecutors.picker.utils.HeaderItemDecoration
 import com.bumptech.glide.Glide
@@ -20,7 +23,7 @@ import com.bumptech.glide.load.resource.bitmap.FitCenter
 import com.bumptech.glide.request.RequestOptions
 
 
-class BottomSheetMediaRecyclerAdapter(private val mMediaList: ArrayList<MediaModel>, mContext: Context):
+class BottomSheetMediaRecyclerAdapter(private val mMediaList: ArrayList<MediaModel>, val mInterface: MediaClickInterface, val mContext: Context):
     RecyclerView.Adapter<RecyclerView.ViewHolder>(), HeaderItemDecoration.StickyHeaderInterface {
 
     companion object{
@@ -30,14 +33,15 @@ class BottomSheetMediaRecyclerAdapter(private val mMediaList: ArrayList<MediaMod
         private const val MARGIN = 4
     }
 
-    var layoutParams: LinearLayout.LayoutParams
+    var maxCount = 0
+    var layoutParams: FrameLayout.LayoutParams
     private val glide: RequestManager
     private val options: RequestOptions
 
     init {
         val size: Int =
             getScreenWidth(mContext as Activity) / SPAN_COUNT - MARGIN / 2
-        layoutParams = LinearLayout.LayoutParams(size, size)
+        layoutParams = FrameLayout.LayoutParams(size, size)
         layoutParams.setMargins(
             MARGIN, MARGIN - MARGIN / 2,
             MARGIN,
@@ -68,18 +72,49 @@ class BottomSheetMediaRecyclerAdapter(private val mMediaList: ArrayList<MediaMod
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is HeaderViewHolder) holder.bind(mMediaList[holder.adapterPosition])
-        else if (holder is MediaViewHolder) holder.bind(mMediaList[holder.adapterPosition])
+        else if (holder is MediaViewHolder) holder.bind(holder.adapterPosition)
     }
+
+    var imageCount = 0
+    var mTapToSelect = false
 
     inner class MediaViewHolder(private val mBinding: RecyclerItemMediaBinding): RecyclerView.ViewHolder(mBinding.root) {
 
-        fun bind(media: MediaModel){
-
+        fun bind(position: Int){
+            val media = mMediaList[position]
             mBinding.imageView.layoutParams = layoutParams
 
             glide.load(media.mMediaUri)
                 .apply(options)
                 .into(mBinding.imageView)
+
+            if (media.isSelected) mBinding.imageViewSelection.visibility = View.VISIBLE
+            else mBinding.imageViewSelection.visibility = View.GONE
+
+            itemView.setOnClickListener {
+                if (imageCount == 0 && !mTapToSelect) {
+                    media.isSelected = !media.isSelected
+                    mInterface.onMediaClick(media)
+                }
+                else if (imageCount < maxCount || media.isSelected){
+                    media.isSelected = !media.isSelected
+                    notifyItemChanged(position)
+                    if (media.isSelected) imageCount++ else imageCount--
+                    mInterface.onMediaLongClick(media, this@BottomSheetMediaRecyclerAdapter::class.java.simpleName)
+                }else{
+                    Toast.makeText(mContext, "Cannot add more than $maxCount items", LENGTH_SHORT).show()
+                }
+            }
+
+            itemView.setOnLongClickListener {
+                if (imageCount == 0) {
+                    media.isSelected = true
+                    notifyItemChanged(position)
+                    imageCount++
+                    mInterface.onMediaLongClick(media, this@BottomSheetMediaRecyclerAdapter::class.java.simpleName)
+                }
+                true
+            }
         }
     }
 
