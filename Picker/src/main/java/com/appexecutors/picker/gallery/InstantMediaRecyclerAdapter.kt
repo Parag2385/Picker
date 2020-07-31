@@ -1,6 +1,7 @@
 package com.appexecutors.picker.gallery
 
 import android.content.Context
+import android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
 import android.view.LayoutInflater
 import android.view.View.GONE
 import android.view.View.VISIBLE
@@ -73,6 +74,9 @@ class InstantMediaRecyclerAdapter(val mMediaList: ArrayList<MediaModel>, val mIn
                 glide.load(media.mMediaUri)
                     .apply(options)
                     .into(mBinding.imageView)
+
+                if (media.mMediaType == MEDIA_TYPE_VIDEO) mBinding.imageViewVideo.visibility = VISIBLE
+                else mBinding.imageViewVideo.visibility = GONE
 
                 if (media.isSelected) mBinding.imageViewSelection.visibility = VISIBLE
                 else mBinding.imageViewSelection.visibility = GONE

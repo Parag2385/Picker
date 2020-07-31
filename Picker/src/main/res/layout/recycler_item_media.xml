@@ -42,7 +42,8 @@
             android:layout_height="15dp"
             android:layout_margin="5dp"
             android:visibility="gone"
-            android:layout_gravity="bottom|end"
+            android:tint="@color/colorWhite"
+            android:layout_gravity="bottom|start"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             android:src="@drawable/ic_baseline_videocam_24" />

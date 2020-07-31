@@ -2,6 +2,7 @@ package com.appexecutors.picker.gallery
 
 import android.app.Activity
 import android.content.Context
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -87,6 +88,10 @@ class BottomSheetMediaRecyclerAdapter(private val mMediaList: ArrayList<MediaMod
             glide.load(media.mMediaUri)
                 .apply(options)
                 .into(mBinding.imageView)
+
+            if (media.mMediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) mBinding.imageViewVideo.visibility =
+                View.VISIBLE
+            else mBinding.imageViewVideo.visibility = View.GONE
 
             if (media.isSelected) mBinding.imageViewSelection.visibility = View.VISIBLE
             else mBinding.imageViewSelection.visibility = View.GONE

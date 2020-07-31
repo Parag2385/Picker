@@ -385,21 +385,23 @@ class Picker : AppCompatActivity() {
 
                 val index = cursor.getColumnIndex(MediaStore.Files.FileColumns._ID)
                 val dateIndex = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATE_ADDED)
+                val typeIndex = cursor.getColumnIndex(MediaStore.Files.FileColumns.MEDIA_TYPE)
 
                 var headerDate = ""
 
                 while (cursor.moveToNext()){
                     val id = cursor.getLong(index)
                     val path = ContentUris.withAppendedId(IMAGE_VIDEO_URI, id)
+                    val mediaType = cursor.getInt(typeIndex)
                     val longDate = cursor.getLong(dateIndex)
                     val mediaDate = getStringDate(this@Picker, longDate)
 
                     if (!headerDate.equals(mediaDate, true)) {
                         headerDate = mediaDate
-                        galleryImageList.add(MediaModel(null, headerDate))
+                        galleryImageList.add(MediaModel(null, mediaType, headerDate))
                     }
 
-                    galleryImageList.add(MediaModel(path, ""))
+                    galleryImageList.add(MediaModel(path, mediaType, ""))
                 }
 
                 mInstantMediaAdapter = InstantMediaRecyclerAdapter(galleryImageList, mMediaClickListener, this@Picker)
