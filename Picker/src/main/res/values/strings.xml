@@ -9,4 +9,5 @@
     <string name="tap_to_select">Tap to Select</string>
     <string name="images_selected">%s Selected</string>
     <string name="str_ok">OK</string>
+    <string name="str_video_initial_time">00:00</string>
 </resources>

@@ -36,6 +36,10 @@ object PermissionUtils {
                 permissionsNeeded.add("CAMERA")
             if (!addPermission(permissionsList, Manifest.permission.WRITE_EXTERNAL_STORAGE, activity))
                 permissionsNeeded.add("WRITE_EXTERNAL_STORAGE")
+            if (!addPermission(permissionsList, Manifest.permission.READ_EXTERNAL_STORAGE, activity))
+                permissionsNeeded.add("READ_EXTERNAL_STORAGE")
+            if (!addPermission(permissionsList, Manifest.permission.RECORD_AUDIO, activity))
+                permissionsNeeded.add("RECORD_AUDIO")
             if (permissionsList.size > 0) {
                 activity.requestPermissions(
                     permissionsList.toTypedArray(),
@@ -58,6 +62,10 @@ object PermissionUtils {
                 permissionsNeeded.add("CAMERA")
             if (!addPermission(permissionsList, Manifest.permission.WRITE_EXTERNAL_STORAGE, fragment.requireActivity()))
                 permissionsNeeded.add("WRITE_EXTERNAL_STORAGE")
+            if (!addPermission(permissionsList, Manifest.permission.READ_EXTERNAL_STORAGE, fragment.requireActivity()))
+                permissionsNeeded.add("READ_EXTERNAL_STORAGE")
+            if (!addPermission(permissionsList, Manifest.permission.RECORD_AUDIO, fragment.requireActivity()))
+                permissionsNeeded.add("RECORD_AUDIO")
             if (permissionsList.size > 0) {
                 fragment.requestPermissions(
                     permissionsList.toTypedArray(),

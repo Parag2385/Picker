@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
 
         mPickerOptions = PickerOptions.init().apply {
             maxCount = 5
+            maxVideoDuration = 10
         }
     }
 

@@ -13,12 +13,16 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.Log
+import android.view.HapticFeedbackConstants.LONG_PRESS
+import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.View.*
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.webkit.MimeTypeMap
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -75,6 +79,7 @@ class Picker : AppCompatActivity() {
     private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
     private var preview: Preview? = null
     private var imageCapture: ImageCapture? = null
+    private var videoCapture: VideoCapture? = null
     private var imageAnalyzer: ImageAnalysis? = null
     private var camera: Camera? = null
     private var cameraProvider: ProcessCameraProvider? = null
@@ -247,6 +252,8 @@ class Picker : AppCompatActivity() {
             .setTargetRotation(rotation)
             .build()
 
+        videoCapture = VideoCapture.Builder().build()
+
         // ImageAnalysis
         imageAnalyzer = ImageAnalysis.Builder()
             // We request aspect ratio but no resolution
@@ -257,7 +264,7 @@ class Picker : AppCompatActivity() {
             .build()
             // The analyzer can then be assigned to the instance
             .also {
-                it.setAnalyzer(cameraExecutor, LuminosityAnalyzer {luma->
+                it.setAnalyzer(cameraExecutor, LuminosityAnalyzer { _ ->
                     // Values returned from our analyzer are passed to the attached listener
                     // We log image analysis results here - you should do something useful
                     // instead!
@@ -272,34 +279,20 @@ class Picker : AppCompatActivity() {
             // A variable number of use-cases can be passed here -
             // camera provides access to CameraControl & CameraInfo
             camera = cameraProvider.bindToLifecycle(
-                this, cameraSelector, preview, imageCapture, imageAnalyzer)
+                this, cameraSelector, preview, imageCapture, videoCapture)
 
             // Attach the viewfinder's surface provider to preview use case
             preview?.setSurfaceProvider(viewFinder.createSurfaceProvider())
         } catch (exc: Exception) {
             Log.e(TAG, "Use case binding failed", exc)
         }
-    }
 
-    /**
-     *  [androidx.camera.core.AspectRatio]. Currently it has values of 4:3 & 16:9.
-     *
-     *  Detecting the most suitable ratio for dimensions provided in @params by counting absolute
-     *  of preview ratio to one of the provided values.
-     *
-     *  @param width - preview width
-     *  @param height - preview height
-     *  @return suitable aspect ratio
-     */
-    private fun aspectRatio(width: Int, height: Int): Int {
-        val previewRatio = max(width, height).toDouble() / min(width, height)
-        if (abs(previewRatio - RATIO_4_3_VALUE) <= abs(previewRatio - RATIO_16_9_VALUE)) {
-            return AspectRatio.RATIO_4_3
-        }
-        return AspectRatio.RATIO_16_9
+        videoTouchListener()
     }
 
     private fun takePhoto() {
+
+        if (isTakingVideo) return
         // Get a stable reference of the modifiable image capture use case
         imageCapture?.let { imageCapture ->
 
@@ -366,6 +359,144 @@ class Picker : AppCompatActivity() {
                 }, ANIMATION_SLOW_MILLIS)
             }
         }
+    }
+
+    private var isTakingVideo = false
+
+    @SuppressLint("ClickableViewAccessibility", "RestrictedApi")
+    private fun videoTouchListener(){
+
+        mBinding.imageViewClick.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                mBinding.imageViewVideoRedBg.visibility = GONE
+                mBinding.imageViewVideoRedBg.animate().scaleX(1f).scaleY(1f)
+                    .setDuration(300).setInterpolator(AccelerateDecelerateInterpolator()).start()
+                mBinding.imageViewClick.animate().scaleX(1f).scaleY(1f).setDuration(300)
+                    .setInterpolator(AccelerateDecelerateInterpolator()).start()
+            } else if (event.action == MotionEvent.ACTION_DOWN) {
+                mBinding.imageViewVideoRedBg.visibility = VISIBLE
+                mBinding.imageViewVideoRedBg.animate().scaleX(1.2f).scaleY(1.2f)
+                    .setDuration(300).setInterpolator(AccelerateDecelerateInterpolator()).start()
+                mBinding.imageViewClick.animate().scaleX(1.2f).scaleY(1.2f).setDuration(300)
+                    .setInterpolator(AccelerateDecelerateInterpolator()).start()
+            }
+            if (event.action == MotionEvent.ACTION_UP && isTakingVideo) {
+                //stop video
+                videoCapture?.stopRecording()
+            }
+
+            false
+        }
+
+        mBinding.imageViewClick.setOnLongClickListener {
+            if (!mPickerOptions.excludeVideos) takeVideo(it)
+            false
+        }
+    }
+
+    private var mVideoCounterProgress = 0
+
+    private var mVideoCounterHandler: Handler? = Handler()
+
+    private var mVideoCounterRunnable = Runnable{}
+
+    @SuppressLint("RestrictedApi")
+    private fun takeVideo(it: View){
+
+        val videoFile = File(
+            outputDirectory,
+            SimpleDateFormat(FILENAME_FORMAT, Locale.ENGLISH
+            ).format(System.currentTimeMillis()) + VIDEO_EXTENSION)
+
+        isTakingVideo = true
+        it.performHapticFeedback(LONG_PRESS)
+
+        mBinding.constraintTimer.visibility = VISIBLE
+
+        mBinding.progressbarVideoCounter.progress = 0
+
+        mBinding.progressbarVideoCounter.max = mPickerOptions.maxVideoDuration
+        mBinding.progressbarVideoCounter.invalidate()
+
+        mVideoCounterRunnable = Runnable{
+            ++mVideoCounterProgress
+            mBinding.progressbarVideoCounter.progress = mVideoCounterProgress
+
+            var min = 0
+
+            var secondBuilder = "$mVideoCounterProgress"
+
+            if (mVideoCounterProgress > 59){
+                min = mVideoCounterProgress / 60
+                secondBuilder = "${mVideoCounterProgress - (60 * min)}"
+            }
+
+            if (secondBuilder.length == 1) secondBuilder = "0$mVideoCounterProgress"
+
+            val time = "0$min:$secondBuilder"
+
+            mBinding.textViewVideoTimer.text = time
+
+            if (mVideoCounterProgress == (mPickerOptions.maxVideoDuration)){
+                mVideoCounterHandler?.removeCallbacks(mVideoCounterRunnable)
+                videoCapture?.stopRecording()
+                mVideoCounterHandler = null
+            }
+
+            mVideoCounterHandler?.postDelayed(mVideoCounterRunnable, 1000)
+        }
+
+        mVideoCounterHandler?.postDelayed(mVideoCounterRunnable, 1000)
+
+        mBinding.imageViewClick.animate().scaleX(1.2f).scaleY(1.2f).setDuration(300)
+            .setInterpolator(AccelerateDecelerateInterpolator()).start()
+
+        mBinding.imageViewFlash.visibility = GONE
+        mBinding.imageViewChangeCamera.visibility = GONE
+        mBinding.textViewMessageBottom.visibility = GONE
+
+        //start video
+        videoCapture?.startRecording(videoFile, cameraExecutor, object : VideoCapture.OnVideoSavedCallback{
+            override fun onVideoSaved(file: File) {
+
+                if (mVideoCounterHandler != null) mVideoCounterHandler?.removeCallbacks(mVideoCounterRunnable)
+
+                val savedUri = Uri.fromFile(file)
+                Log.d(TAG, "Video capture succeeded: $savedUri")
+
+                // If the folder selected is an external media directory, this is
+                // unnecessary but otherwise other apps will not be able to access our
+                // images unless we scan them using [MediaScannerConnection]
+                val mimeType = MimeTypeMap.getSingleton()
+                    .getMimeTypeFromExtension(savedUri.toFile().extension)
+                MediaScannerConnection.scanFile(
+                    this@Picker,
+                    arrayOf(savedUri.toFile().absolutePath),
+                    arrayOf(mimeType)
+                ) { _, uri ->
+                    Log.d(TAG, "Image capture scanned into media store: $uri")
+                }
+
+                val mPathList = ArrayList<String>()
+                mPathList.add(savedUri.toString())
+
+                val intent = Intent()
+                intent.putExtra(PICKED_MEDIA_LIST, mPathList)
+                setResult(Activity.RESULT_OK, intent)
+                finish()
+
+                isTakingVideo = false
+            }
+
+            override fun onError(
+                videoCaptureError: Int,
+                message: String,
+                cause: Throwable?
+            ) {
+                //
+            }
+
+        })
     }
 
     private val galleryImageList = ArrayList<MediaModel>()
@@ -613,6 +744,24 @@ class Picker : AppCompatActivity() {
             mediaDir else filesDir
     }
 
+    /**
+     *  [androidx.camera.core.AspectRatio]. Currently it has values of 4:3 & 16:9.
+     *
+     *  Detecting the most suitable ratio for dimensions provided in @params by counting absolute
+     *  of preview ratio to one of the provided values.
+     *
+     *  @param width - preview width
+     *  @param height - preview height
+     *  @return suitable aspect ratio
+     */
+    private fun aspectRatio(width: Int, height: Int): Int {
+        val previewRatio = max(width, height).toDouble() / min(width, height)
+        if (abs(previewRatio - RATIO_4_3_VALUE) <= abs(previewRatio - RATIO_16_9_VALUE)) {
+            return AspectRatio.RATIO_4_3
+        }
+        return AspectRatio.RATIO_16_9
+    }
+
     /** Returns true if the device has an available back camera. False otherwise */
     private fun hasBackCamera(): Boolean {
         return cameraProvider?.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA) ?: false
@@ -631,6 +780,7 @@ class Picker : AppCompatActivity() {
         const val PICKED_MEDIA_LIST = "PICKED_MEDIA_LIST"
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
         private const val PHOTO_EXTENSION = ".jpg"
+        private const val VIDEO_EXTENSION = ".mp4"
         private const val RATIO_4_3_VALUE = 4.0 / 3.0
         private const val RATIO_16_9_VALUE = 16.0 / 9.0
 

@@ -21,7 +21,6 @@ class LuminosityAnalyzer(listener: LumaListener? = null) : ImageAnalysis.Analyze
     private val listeners = ArrayList<LumaListener>().apply { listener?.let { add(it) } }
     private var lastAnalyzedTimestamp = 0L
     private var framesPerSecond: Double = -1.0
-    private set
 
     /**
      * Used to add listeners that will be called with each luma computed

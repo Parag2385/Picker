@@ -7,6 +7,7 @@ class PickerOptions : Serializable{
     var maxCount = 10
     var allowFrontCamera = true
     var excludeVideos = false
+    var maxVideoDuration = 30
 
     companion object{
         @JvmStatic
