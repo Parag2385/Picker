@@ -71,3 +71,6 @@ dependencies {
     def material_version = "1.2.0-beta01"
     implementation "com.google.android.material:material:$material_version"
 }
+
+apply from: 'install.gradle'
+apply from: 'bintray.gradle'
