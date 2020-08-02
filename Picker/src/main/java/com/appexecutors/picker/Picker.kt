@@ -607,7 +607,6 @@ class Picker : AppCompatActivity() {
                 } else hideTopViews()
 
             }
-
         }
 
     }
@@ -810,6 +809,43 @@ class Picker : AppCompatActivity() {
         intent.putExtra(PICKED_MEDIA_LIST, mPathList)
         setResult(Activity.RESULT_OK, intent)
         finish()
+    }
+
+    override fun onBackPressed() {
+        when {
+            bottomSheetBehavior?.state == BottomSheetBehavior.STATE_EXPANDED -> bottomSheetBehavior?.state = BottomSheetBehavior.STATE_COLLAPSED
+            mInstantMediaAdapter?.imageCount!! > 0 -> removeSelection()
+            else -> super.onBackPressed()
+        }
+    }
+
+    private fun removeSelection(){
+        mInstantMediaAdapter?.imageCount = 0
+        mBottomMediaAdapter?.imageCount = 0
+        for (i in 0 until galleryImageList.size) galleryImageList[i].isSelected = false
+        mInstantMediaAdapter?.notifyDataSetChanged()
+        mBottomMediaAdapter?.notifyDataSetChanged()
+        mBinding.constraintCheck.visibility = GONE
+        mBinding.textViewOk.visibility = GONE
+        mBinding.imageViewCheck.visibility = VISIBLE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            mBinding.constraintBottomSheetTop.setBackgroundColor(
+                resources.getColor(
+                    R.color.colorWhite,
+                    null
+                )
+            )
+            DrawableCompat.setTint(
+                mBinding.imageViewBack.drawable,
+                resources.getColor(R.color.colorBlack, null)
+            )
+        } else {
+            mBinding.constraintBottomSheetTop.setBackgroundColor(resources.getColor(R.color.colorWhite))
+            DrawableCompat.setTint(
+                mBinding.imageViewBack.drawable,
+                resources.getColor(R.color.colorBlack)
+            )
+        }
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {

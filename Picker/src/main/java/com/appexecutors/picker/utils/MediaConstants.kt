@@ -2,6 +2,7 @@ package com.appexecutors.picker.utils
 
 import android.content.Context
 import android.database.Cursor
+import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 
@@ -18,7 +19,7 @@ object MediaConstants {
         MediaStore.Files.FileColumns.TITLE
     )
 
-    var IMAGE_VIDEO_URI =
+    var IMAGE_VIDEO_URI: Uri =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
     else MediaStore.Files.getContentUri("external")
 
