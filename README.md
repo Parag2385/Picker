@@ -28,7 +28,7 @@ Picker is distributed using [jcenter](https://bintray.com/parag2385/maven/com.ap
    }
    
    dependencies {
-         implementation 'com.appexecutors.picker:picker:1.0.3'
+         implementation "com.appexecutors.picker:picker:$version"
    }
 ```
 
