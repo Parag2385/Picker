@@ -29,12 +29,12 @@
             android:background="@drawable/background_alpha_dark"
             android:padding="16dp"
             android:visibility="gone"
-            android:tint="@color/colorWhite"
             android:src="@drawable/ic_baseline_check_36"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/colorWhite" />
 
         <ImageView
             android:id="@+id/image_view_video"
@@ -42,7 +42,7 @@
             android:layout_height="15dp"
             android:layout_margin="5dp"
             android:visibility="gone"
-            android:tint="@color/colorWhite"
+            app:tint="@color/colorWhite"
             android:layout_gravity="bottom|start"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"

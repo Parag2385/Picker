@@ -263,7 +263,7 @@
                         android:background="@drawable/background_circular_green"
                         android:padding="12dp"
                         android:src="@drawable/ic_baseline_check_36"
-                        android:tint="@color/colorWhite"
+                        app:tint="@color/colorWhite"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"

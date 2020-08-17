@@ -29,6 +29,7 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toFile
 import androidx.databinding.DataBindingUtil
@@ -97,7 +98,8 @@ class Picker : AppCompatActivity() {
 
         mBinding.viewFinder.post {
             if (allPermissionsGranted()) {
-                startCamera()
+                //to avoid NullPointerException for Display.getRealMetrics which comes for some cases
+                Handler().postDelayed({ startCamera() }, 100)
             }
         }
 
@@ -188,9 +190,8 @@ class Picker : AppCompatActivity() {
 
         flashMode = ImageCapture.FLASH_MODE_OFF
         mBinding.imageViewFlash.setImageDrawable(
-            resources.getDrawable(
-                R.drawable.ic_baseline_flash_off_36,
-                null
+            ResourcesCompat.getDrawable(
+                resources, R.drawable.ic_baseline_flash_off_36, null
             )
         )
 
@@ -203,9 +204,8 @@ class Picker : AppCompatActivity() {
             when (flashMode) {
                 ImageCapture.FLASH_MODE_OFF -> {
                     mBinding.imageViewFlash.setImageDrawable(
-                        resources.getDrawable(
-                            R.drawable.ic_baseline_flash_on_36,
-                            null
+                        ResourcesCompat.getDrawable(
+                            resources, R.drawable.ic_baseline_flash_on_36, null
                         )
                     )
                     camera?.cameraControl?.enableTorch(true)
@@ -213,9 +213,8 @@ class Picker : AppCompatActivity() {
                 }
                 ImageCapture.FLASH_MODE_ON -> {
                     mBinding.imageViewFlash.setImageDrawable(
-                        resources.getDrawable(
-                            R.drawable.ic_baseline_flash_off_36,
-                            null
+                        ResourcesCompat.getDrawable(
+                            resources, R.drawable.ic_baseline_flash_off_36, null
                         )
                     )
                     camera?.cameraControl?.enableTorch(false)
@@ -504,7 +503,6 @@ class Picker : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        Log.e(TAG, "onDestroy: ")
         super.onDestroy()
         cameraExecutor.shutdown()
 
@@ -911,6 +909,7 @@ class Picker : AppCompatActivity() {
                 override fun onPermission(approved: Boolean) {
                     val mPickerIntent = Intent(fragment.activity, Picker::class.java)
                     mPickerIntent.putExtra(PICKER_OPTIONS, mPickerOptions)
+                    mPickerIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
                     fragment.startActivityForResult(mPickerIntent, REQUEST_CODE_PICKER)
                 }
             })
@@ -920,9 +919,10 @@ class Picker : AppCompatActivity() {
         fun startPicker(activity: FragmentActivity, mPickerOptions: PickerOptions) {
             PermissionUtils.checkForCameraWritePermissions(activity, object : PermissionCallback {
                 override fun onPermission(approved: Boolean) {
-                    val mPicEditorIntent = Intent(activity, Picker::class.java)
-                    mPicEditorIntent.putExtra(PICKER_OPTIONS, mPickerOptions)
-                    activity.startActivityForResult(mPicEditorIntent, REQUEST_CODE_PICKER)
+                    val mPickerIntent = Intent(activity, Picker::class.java)
+                    mPickerIntent.putExtra(PICKER_OPTIONS, mPickerOptions)
+                    mPickerIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                    activity.startActivityForResult(mPickerIntent, REQUEST_CODE_PICKER)
                 }
             })
         }
