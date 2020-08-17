@@ -1,14 +1,15 @@
-<h1 align="center">
-<img src="screens/screen3.png" width="280" height="498" alt="Screen1"/>
-<img src="screens/screen4.png" width="280" height="498" alt="Screenshot 1"/>
-<img src="screens/screen2.png" width="280" height="498" alt="Screenshot 2"/><br/>
-
-    Picker
-</h1>
+# Picker
 
 ![Download](https://api.bintray.com/packages/parag2385/maven/com.appexecutors.picker/images/download.svg)
 
 A CameraX based WhatsApp Style Image-Video Picker
+
+
+
+<h1>
+    <img src="screens/picker.gif" width="280" height="498" alt="Gif"/>
+    <img src="screens/screen5.jpg" width="280" height="498" alt="Screenshot 1"/>
+</h1>
 
 ## Features
 1. Pick Multiple Images and Videos
