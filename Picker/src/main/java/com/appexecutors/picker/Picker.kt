@@ -812,7 +812,7 @@ class Picker : AppCompatActivity() {
     override fun onBackPressed() {
         when {
             bottomSheetBehavior?.state == BottomSheetBehavior.STATE_EXPANDED -> bottomSheetBehavior?.state = BottomSheetBehavior.STATE_COLLAPSED
-            mInstantMediaAdapter?.imageCount!! > 0 -> removeSelection()
+            mInstantMediaAdapter?.imageCount != null && mInstantMediaAdapter?.imageCount!! > 0 -> removeSelection()
             else -> super.onBackPressed()
         }
     }

@@ -60,7 +60,7 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
 
     // Kotlin Co-routines
-    def co_routines_version = "1.3.6"
+    def co_routines_version = "1.3.7"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$co_routines_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$co_routines_version"
 
