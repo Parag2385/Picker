@@ -22,7 +22,16 @@
             <androidx.camera.view.PreviewView
                 android:id="@+id/viewFinder"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent" >
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_view_bottom_sheet_media"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/colorWhite"
+                    android:visibility="invisible"
+                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager" />
+            </androidx.camera.view.PreviewView>
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/constraint_timer"
@@ -209,15 +218,6 @@
 
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recycler_view_bottom_sheet_media"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@color/colorWhite"
-                    android:visibility="invisible"
-                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                    app:layout_constraintTop_toBottomOf="@+id/constraint_bottom_sheet_top" />
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/image_view_arrow_up"

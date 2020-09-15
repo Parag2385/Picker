@@ -69,7 +69,6 @@ import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.sign
 
 @Suppress("DEPRECATION")
 class Picker : AppCompatActivity() {
@@ -83,7 +82,6 @@ class Picker : AppCompatActivity() {
     private var camera: Camera? = null
     private var cameraProvider: ProcessCameraProvider? = null
     private var flashMode: Int = ImageCapture.FLASH_MODE_OFF
-    private var lastScaleFactor = 0f
     private var statusBarSize = 0
 
     private lateinit var outputDirectory: File
@@ -116,9 +114,10 @@ class Picker : AppCompatActivity() {
         }
         showStatusBar(this)
         Handler().postDelayed({ getMedia() }, 500)
+        initViews()
     }
 
-    @SuppressLint("ClickableViewAccessibility")
+
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
@@ -134,10 +133,14 @@ class Picker : AppCompatActivity() {
             }
 
             bindCameraUseCases()
-
+            setUpPinchToZoom()
             setupFlash()
 
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun initViews(){
 
         mBinding.imageViewChangeCamera.let {
 
@@ -149,40 +152,31 @@ class Picker : AppCompatActivity() {
                 }
                 // Re-bind use cases to update selected camera
                 bindCameraUseCases()
-
+                setUpPinchToZoom()
                 setupFlash()
             }
-
-        }
-
-        val scaleGestureDetector = ScaleGestureDetector(this, zoomListener)
-
-        viewFinder.setOnTouchListener { _, event ->
-            scaleGestureDetector.onTouchEvent(event)
-            return@setOnTouchListener true
         }
 
         if (!mPickerOptions.allowFrontCamera) mBinding.imageViewChangeCamera.visibility = GONE
+        if (mPickerOptions.excludeVideos) mBinding.textViewMessageBottom.visibility = INVISIBLE
     }
 
-    private val zoomListener = object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScale(scaleDetector: ScaleGestureDetector): Boolean {
-            val zoomRatio: Float? = camera?.cameraInfo?.zoomState?.value?.zoomRatio
-            val minZoomRatio: Float? = camera?.cameraInfo?.zoomState?.value?.minZoomRatio
-            val maxZoomRatio: Float? = camera?.cameraInfo?.zoomState?.value?.maxZoomRatio
-            val scaleFactor = scaleDetector.scaleFactor
-            lastScaleFactor =
-                if (lastScaleFactor == 0f || (sign(scaleFactor) == sign(lastScaleFactor))) {
-                    camera?.cameraControl?.setZoomRatio(
-                        (minZoomRatio!!).coerceAtLeast(
-                            (zoomRatio!! * scaleFactor).coerceAtMost(maxZoomRatio!!)
-                        )
-                    )
-                    scaleFactor
-                } else {
-                    0f
-                }
-            return true
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setUpPinchToZoom() {
+        val listener = object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                val currentZoomRatio: Float = camera?.cameraInfo?.zoomState?.value?.zoomRatio ?: 1F
+                val delta = detector.scaleFactor
+                camera?.cameraControl?.setZoomRatio(currentZoomRatio * delta)
+                return true
+            }
+        }
+        val scaleGestureDetector = ScaleGestureDetector(this, listener)
+        viewFinder.setOnTouchListener { _, event ->
+            viewFinder.post {
+                scaleGestureDetector.onTouchEvent(event)
+            }
+            return@setOnTouchListener true
         }
     }
 
@@ -387,7 +381,13 @@ class Picker : AppCompatActivity() {
         }
 
         mBinding.imageViewClick.setOnLongClickListener {
-            if (!mPickerOptions.excludeVideos) takeVideo(it)
+            if (!mPickerOptions.excludeVideos) {
+                try{
+                    takeVideo(it)
+                }catch (e : Exception) {
+                    e.printStackTrace()
+                }
+            }
             false
         }
     }
@@ -405,6 +405,8 @@ class Picker : AppCompatActivity() {
                 FILENAME_FORMAT, Locale.ENGLISH
             ).format(System.currentTimeMillis()) + VIDEO_EXTENSION
         )
+
+        val mOutputFileOptions = VideoCapture.OutputFileOptions.Builder(videoFile).build()
 
         isTakingVideo = true
         it.performHapticFeedback(LONG_PRESS)
@@ -455,16 +457,14 @@ class Picker : AppCompatActivity() {
 
         //start video
         videoCapture?.startRecording(
-            videoFile,
+            mOutputFileOptions,
             cameraExecutor,
             object : VideoCapture.OnVideoSavedCallback {
-                override fun onVideoSaved(file: File) {
+                override fun onVideoSaved(output: VideoCapture.OutputFileResults) {
+                    val savedUri = output.savedUri ?: Uri.fromFile(videoFile)
+                    if (mVideoCounterHandler != null)
+                        mVideoCounterHandler?.removeCallbacks(mVideoCounterRunnable)
 
-                    if (mVideoCounterHandler != null) mVideoCounterHandler?.removeCallbacks(
-                        mVideoCounterRunnable
-                    )
-
-                    val savedUri = Uri.fromFile(file)
                     Log.d(TAG, "Video capture succeeded: $savedUri")
 
                     // If the folder selected is an external media directory, this is

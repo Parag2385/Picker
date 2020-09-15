@@ -14,7 +14,6 @@
 /captures
 .externalNativeBuild
 .cxx
-/Picker/.gitignore
 
 #built application files
 *.apk
@@ -42,3 +41,6 @@ app/release/
 
 #NDK
 obj/
+
+bintray.gradle
+install.gradle
