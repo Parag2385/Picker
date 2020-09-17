@@ -3,6 +3,7 @@ package com.appexecutors.picker.gallery
 import android.app.Activity
 import android.content.Context
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +11,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.appexecutors.picker.R
 import com.appexecutors.picker.databinding.RecyclerItemDateHeaderBinding
@@ -36,7 +38,7 @@ class BottomSheetMediaRecyclerAdapter(private val mMediaList: ArrayList<MediaMod
 
     var maxCount = 0
     var layoutParams: FrameLayout.LayoutParams
-    private val glide: RequestManager
+    private var glide: RequestManager? = null
     private val options: RequestOptions
 
     init {
@@ -50,7 +52,11 @@ class BottomSheetMediaRecyclerAdapter(private val mMediaList: ArrayList<MediaMod
         )
         options = RequestOptions().override(300).transform(CenterCrop())
             .transform(FitCenter())
-        glide = Glide.with(mContext)
+        try {
+            if(!(mContext as AppCompatActivity).isFinishing) glide = Glide.with(mContext)
+        }catch (e: Exception){
+            e.printStackTrace()
+        }
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -85,9 +91,11 @@ class BottomSheetMediaRecyclerAdapter(private val mMediaList: ArrayList<MediaMod
             val media = mMediaList[position]
             mBinding.imageView.layoutParams = layoutParams
 
-            glide.load(media.mMediaUri)
-                .apply(options)
-                .into(mBinding.imageView)
+            Log.e("TAG", "bind: $adapterPosition" )
+
+            glide?.load(media.mMediaUri)
+                ?.apply(options)
+                ?.into(mBinding.imageView)
 
             if (media.mMediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) mBinding.imageViewVideo.visibility =
                 View.VISIBLE

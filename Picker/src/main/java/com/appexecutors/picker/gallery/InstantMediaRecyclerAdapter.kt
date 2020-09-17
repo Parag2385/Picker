@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.appexecutors.picker.databinding.RecyclerItemMediaBinding
 import com.appexecutors.picker.interfaces.MediaClickInterface
@@ -23,7 +24,7 @@ import com.bumptech.glide.request.RequestOptions
 class InstantMediaRecyclerAdapter(val mMediaList: ArrayList<MediaModel>, val mInterface: MediaClickInterface, private val mContext: Context): RecyclerView.Adapter<InstantMediaRecyclerAdapter.MediaViewHolder>() {
 
     var maxCount = 0
-    private val glide: RequestManager
+    private var glide: RequestManager? = null
     private val options: RequestOptions
     private var size = 0f
     private val margin = 3
@@ -34,7 +35,11 @@ class InstantMediaRecyclerAdapter(val mMediaList: ArrayList<MediaModel>, val mIn
         padding = (size / 3.5).toInt()
         options = RequestOptions().override(300).transform(CenterCrop())
             .transform(FitCenter())
-        glide = Glide.with(mContext)
+        try {
+            if(!(mContext as AppCompatActivity).isFinishing) glide = Glide.with(mContext)
+        }catch (e: Exception){
+            e.printStackTrace()
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder {
@@ -71,9 +76,9 @@ class InstantMediaRecyclerAdapter(val mMediaList: ArrayList<MediaModel>, val mIn
 
                 itemView.layoutParams = layoutParams
 
-                glide.load(media.mMediaUri)
-                    .apply(options)
-                    .into(mBinding.imageView)
+                glide?.load(media.mMediaUri)
+                    ?.apply(options)
+                    ?.into(mBinding.imageView)
 
                 if (media.mMediaType == MEDIA_TYPE_VIDEO) mBinding.imageViewVideo.visibility = VISIBLE
                 else mBinding.imageViewVideo.visibility = GONE
