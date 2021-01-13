@@ -55,7 +55,6 @@ import com.appexecutors.picker.utils.MediaConstants.getImageVideoCursor
 import com.appexecutors.picker.utils.PermissionUtils
 import com.appexecutors.picker.utils.PickerOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import kotlinx.android.synthetic.main.activity_picker.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -172,8 +171,8 @@ class Picker : AppCompatActivity() {
             }
         }
         val scaleGestureDetector = ScaleGestureDetector(this, listener)
-        viewFinder.setOnTouchListener { _, event ->
-            viewFinder.post {
+        mBinding.viewFinder.setOnTouchListener { _, event ->
+            mBinding.viewFinder.post {
                 scaleGestureDetector.onTouchEvent(event)
             }
             return@setOnTouchListener true
@@ -224,13 +223,13 @@ class Picker : AppCompatActivity() {
     private fun bindCameraUseCases() {
 
         // Get screen metrics used to setup camera for full screen resolution
-        val metrics = DisplayMetrics().also { viewFinder.display.getRealMetrics(it) }
+        val metrics = DisplayMetrics().also { mBinding.viewFinder.display.getRealMetrics(it) }
         Log.d(TAG, "Screen metrics: ${metrics.widthPixels} x ${metrics.heightPixels}")
 
         val screenAspectRatio = aspectRatio(metrics.widthPixels, metrics.heightPixels)
         Log.d(TAG, "Preview aspect ratio: $screenAspectRatio")
 
-        val rotation = viewFinder.display.rotation
+        val rotation = mBinding.viewFinder.display.rotation
 
         // CameraProvider
         val cameraProvider = cameraProvider
@@ -271,7 +270,7 @@ class Picker : AppCompatActivity() {
             )
 
             // Attach the viewfinder's surface provider to preview use case
-            preview?.setSurfaceProvider(viewFinder.createSurfaceProvider())
+            preview?.setSurfaceProvider(mBinding.viewFinder.surfaceProvider)
         } catch (exc: Exception) {
             Log.e(TAG, "Use case binding failed", exc)
         }
@@ -343,10 +342,10 @@ class Picker : AppCompatActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
                 // Display flash animation to indicate that photo was captured
-                container.postDelayed({
-                    container.foreground = ColorDrawable(Color.WHITE)
-                    container.postDelayed(
-                        { container.foreground = null }, ANIMATION_FAST_MILLIS
+                mBinding.container.postDelayed({
+                    mBinding.container.foreground = ColorDrawable(Color.WHITE)
+                    mBinding.container.postDelayed(
+                        { mBinding.container.foreground = null }, ANIMATION_FAST_MILLIS
                     )
                 }, ANIMATION_SLOW_MILLIS)
             }

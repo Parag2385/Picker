@@ -9,7 +9,7 @@ import com.appexecutors.picker.Picker
 import com.appexecutors.picker.Picker.Companion.PICKED_MEDIA_LIST
 import com.appexecutors.picker.Picker.Companion.REQUEST_CODE_PICKER
 import com.appexecutors.picker.utils.PickerOptions
-import kotlinx.android.synthetic.main.activity_main.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        fab.setOnClickListener {
+        findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             Picker.startPicker(this, mPickerOptions)
         }
 
